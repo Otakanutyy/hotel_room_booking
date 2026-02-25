@@ -2,7 +2,7 @@ services:
   backend:
     build: .
     container_name: backend
-    command: sh -c "python manage.py migrate && python scripts/ensure_superuser.py && python manage.py runserver 0.0.0.0:8000"
+    command: sh -c "python manage.py migrate && python scripts/ensure_superuser.py && python manage.py seed_rooms && python manage.py runserver 0.0.0.0:8000"
     environment:
       POSTGRES_DB: hotel_room_booking
       POSTGRES_USER: hotel

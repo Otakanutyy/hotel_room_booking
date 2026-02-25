@@ -17,9 +17,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.routers import DefaultRouter
 
 from bookings.api import BookingViewSet
+from config.api_auth import RegisterView
 from rooms.api import RoomViewSet
 
 
@@ -30,5 +33,10 @@ router.register(r"bookings", BookingViewSet, basename="booking")
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/", include(router.urls)),
+    path("api/schema/", SpectacularAPIView.as_view(), name="api-schema"),
+    path("api/docs/", SpectacularSwaggerView.as_view(url_name="api-schema"), name="api-docs"),
     path("api-auth/", include("rest_framework.urls")),
+    path("api/auth/register/", RegisterView.as_view(), name="api-register"),
+    path("api/auth/jwt/", TokenObtainPairView.as_view(), name="api-jwt"),
+    path("api/auth/jwt/refresh/", TokenRefreshView.as_view(), name="api-jwt-refresh"),
 ]
