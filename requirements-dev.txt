@@ -1,0 +1,12 @@
+# Dev-only tools (not needed in Docker runtime)
+ruff==0.15.2
+mypy==1.19.1
+
+django-stubs==5.2.9
+django-stubs-ext==5.2.9
+djangorestframework-stubs==3.16.8
+
+types-PyYAML==6.0.12.20250915
+typing_extensions==4.15.0
+mypy_extensions==1.1.0
+pathspec==1.0.4

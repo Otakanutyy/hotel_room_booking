@@ -1,3 +1,1 @@
-from django.shortcuts import render
-
-# Create your views here.
+"""App views are implemented via DRF in rooms/api.py."""
