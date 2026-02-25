@@ -6,6 +6,14 @@ Hotel room booking (Django + Postgres).
 docker compose up -d --build
 ```
 
+Stop and remove containers:
+
+```bash
+docker compose down -v
+```
+
+Note: This removes volumes too. To keep the database volume, use `docker compose down`.
+
 Open:
 - http://localhost:8000/
 - http://localhost:8000/admin/
