@@ -26,6 +26,7 @@ Auth (JWT):
 Dev tools:
 ```bash
 pip install -r requirements-dev.txt
+ruff format .
 ruff check .
 mypy .
 ```

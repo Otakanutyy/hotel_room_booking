@@ -65,6 +65,11 @@ class RegisterView(GenericAPIView):
         refresh = RefreshToken.for_user(user)
 
         return Response(
-            {"id": user.id, "username": user.username, "access": str(refresh.access_token), "refresh": str(refresh)},
+            {
+                "id": user.id,
+                "username": user.username,
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+            },
             status=status.HTTP_201_CREATED,
         )

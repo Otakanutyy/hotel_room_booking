@@ -129,11 +129,15 @@ class RoomViewSet(viewsets.ModelViewSet):
         if not start_date or not end_date or start_date >= end_date:
             return Response({"detail": "Provide start/end with start < end."}, status=400)
 
-        qs = self.get_queryset().exclude(
-            bookings__status=BookingStatus.CONFIRMED,
-            bookings__start_date__lt=end_date,
-            bookings__end_date__gt=start_date,
-        ).distinct()
+        qs = (
+            self.get_queryset()
+            .exclude(
+                bookings__status=BookingStatus.CONFIRMED,
+                bookings__start_date__lt=end_date,
+                bookings__end_date__gt=start_date,
+            )
+            .distinct()
+        )
 
         page = self.paginate_queryset(qs)
         if page is not None:
