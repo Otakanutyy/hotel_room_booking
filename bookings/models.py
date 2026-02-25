@@ -29,6 +29,10 @@ class Booking(models.Model):
 		if self.start_date and self.end_date and self.start_date >= self.end_date:
 			raise ValidationError("end_date must be after start_date")
 
+		# Only confirmed bookings should block availability.
+		if self.status != BookingStatus.CONFIRMED:
+			return
+
 		if not self.room_id or not self.start_date or not self.end_date:
 			return
 

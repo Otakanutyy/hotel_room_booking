@@ -1,0 +1,29 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+exclude = [
+  ".git",
+  ".venv",
+  "venv",
+  "__pycache__",
+  "**/migrations/**",
+]
+
+[tool.ruff.lint]
+# Keep this minimal to avoid noisy style churn.
+select = ["F", "E9"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["mypy_django_plugin.main"]
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unreachable = true
+no_implicit_optional = true
+check_untyped_defs = true
+# Django/DRF stubs cover a lot, but keep this tolerant for a small project.
+ignore_missing_imports = true
+
+[tool.django-stubs]
+django_settings_module = "config.settings"

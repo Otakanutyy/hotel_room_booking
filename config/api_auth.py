@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 from django.contrib.auth import get_user_model
 
 from drf_spectacular.utils import extend_schema, inline_serializer
@@ -25,7 +29,7 @@ class RegisterSerializer(serializers.Serializer):
 
         return username
 
-    def create(self, validated_data):
+    def create(self, validated_data: dict[str, Any]):
         User = get_user_model()
         return User.objects.create_user(
             username=validated_data["username"],
@@ -53,7 +57,7 @@ class RegisterView(GenericAPIView):
             )
         },
     )
-    def post(self, request):
+    def post(self, request, *args: Any, **kwargs: Any):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 

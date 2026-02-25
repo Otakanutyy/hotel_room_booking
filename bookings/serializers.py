@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+from datetime import date
+from typing import Any
+
 from rest_framework import serializers
 
 from .models import Booking
@@ -7,16 +12,46 @@ class BookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
         fields = ["id", "room", "user", "start_date", "end_date", "status", "created_at"]
-        read_only_fields = ["user", "status", "created_at"]
+        read_only_fields = ["user", "created_at"]
 
-    def validate(self, attrs):
+    def get_fields(self) -> dict[str, serializers.Field]:
+        fields = super().get_fields()
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+
+        # Only staff can change booking status via PUT/PATCH.
+        if not getattr(user, "is_staff", False):
+            fields["status"].read_only = True
+
+        return fields
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         request = self.context.get("request")
 
+        existing = self.instance
+
+        room = attrs.get("room", getattr(existing, "room", None))
+        start_date = attrs.get("start_date", getattr(existing, "start_date", None))
+        end_date = attrs.get("end_date", getattr(existing, "end_date", None))
+        status = attrs.get("status", getattr(existing, "status", None))
+
+        # For creates, force the booking user to be the requester.
+        booking_user = getattr(existing, "user", None) or getattr(request, "user", None)
+
+        if room is None or start_date is None or end_date is None or booking_user is None:
+            raise serializers.ValidationError("room, start_date, end_date are required")
+
+        # Narrow types for mypy/django-stubs.
+        if not isinstance(start_date, date) or not isinstance(end_date, date):
+            raise serializers.ValidationError("Invalid date format")
+
         instance = Booking(
-            room=attrs.get("room"),
-            user=getattr(request, "user", None),
-            start_date=attrs.get("start_date"),
-            end_date=attrs.get("end_date"),
+            pk=getattr(existing, "pk", None),
+            room=room,
+            user=booking_user,
+            start_date=start_date,
+            end_date=end_date,
+            status=status or Booking._meta.get_field("status").default,
         )
 
         # Runs model-level validation (date order + overlap check)

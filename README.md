@@ -22,3 +22,10 @@ Auth (JWT):
 - POST http://localhost:8000/api/auth/jwt/ (get access/refresh)
 - POST http://localhost:8000/api/auth/jwt/refresh/ (refresh access)
 - Use header: Authorization: Bearer <access>
+
+Dev tools:
+```bash
+pip install -r requirements-dev.txt
+ruff check .
+mypy .
+```
