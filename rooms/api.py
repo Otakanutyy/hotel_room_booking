@@ -3,13 +3,15 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
-from drf_spectacular.utils import OpenApiParameter, OpenApiTypes, extend_schema, extend_schema_view
 from django.db.models import QuerySet
+from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import OpenApiParameter, OpenApiTypes, extend_schema, extend_schema_view
 from rest_framework import permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
 
+from .filters import RoomFilter
 from .models import Room
 from .serializers import RoomSerializer
 from bookings.models import BookingStatus
@@ -18,75 +20,19 @@ from bookings.models import BookingStatus
 @extend_schema_view(
     list=extend_schema(
         auth=[],
-        parameters=[
-            OpenApiParameter(
-                name="price_min",
-                type=OpenApiTypes.DECIMAL,
-                location=OpenApiParameter.QUERY,
-                required=False,
-                description="Minimum price per night.",
-            ),
-            OpenApiParameter(
-                name="price_max",
-                type=OpenApiTypes.DECIMAL,
-                location=OpenApiParameter.QUERY,
-                required=False,
-                description="Maximum price per night.",
-            ),
-            OpenApiParameter(
-                name="capacity_min",
-                type=OpenApiTypes.INT,
-                location=OpenApiParameter.QUERY,
-                required=False,
-                description="Minimum capacity (number of guests).",
-            ),
-            OpenApiParameter(
-                name="capacity_max",
-                type=OpenApiTypes.INT,
-                location=OpenApiParameter.QUERY,
-                required=False,
-                description="Maximum capacity (number of guests).",
-            ),
-            OpenApiParameter(
-                name="ordering",
-                type=OpenApiTypes.STR,
-                location=OpenApiParameter.QUERY,
-                required=False,
-                description=(
-                    "Sort results by a field. Allowed: name, price_per_night, capacity. "
-                    "Prefix with '-' for descending (e.g. -price_per_night)."
-                ),
-            ),
-        ],
     ),
     retrieve=extend_schema(auth=[]),
 )
 class RoomViewSet(viewsets.ModelViewSet):
     queryset = Room.objects.all()
     serializer_class = RoomSerializer
-    filter_backends = [OrderingFilter]
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_class = RoomFilter
     ordering_fields = ["price_per_night", "capacity", "name"]
     ordering = ["name"]
 
     def get_queryset(self) -> QuerySet[Room]:
-        qs = super().get_queryset()
-        params = self.request.query_params
-
-        price_min = params.get("price_min")
-        price_max = params.get("price_max")
-        capacity_min = params.get("capacity_min")
-        capacity_max = params.get("capacity_max")
-
-        if price_min:
-            qs = qs.filter(price_per_night__gte=price_min)
-        if price_max:
-            qs = qs.filter(price_per_night__lte=price_max)
-        if capacity_min:
-            qs = qs.filter(capacity__gte=capacity_min)
-        if capacity_max:
-            qs = qs.filter(capacity__lte=capacity_max)
-
-        return qs
+        return super().get_queryset()
 
     def get_permissions(self):
         # Anyone can read rooms (including availability search);
@@ -130,7 +76,7 @@ class RoomViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Provide start/end with start < end."}, status=400)
 
         qs = (
-            self.get_queryset()
+            self.filter_queryset(self.get_queryset())
             .exclude(
                 bookings__status=BookingStatus.CONFIRMED,
                 bookings__start_date__lt=end_date,

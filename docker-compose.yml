@@ -4,16 +4,17 @@ services:
     container_name: backend
     command: sh -c "python manage.py migrate && python scripts/ensure_superuser.py && python manage.py seed_rooms && python manage.py runserver 0.0.0.0:8000"
     environment:
-      POSTGRES_DB: hotel_room_booking
-      POSTGRES_USER: hotel
-      POSTGRES_PASSWORD: hotelpass
-      POSTGRES_HOST: db
-      POSTGRES_PORT: "5432"
-      DJANGO_DEBUG: "1"
-      DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1"
-      DJANGO_SUPERUSER_USERNAME: "admin"
-      DJANGO_SUPERUSER_EMAIL: "admin@example.com"
-      DJANGO_SUPERUSER_PASSWORD: "admin"
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DJANGO_DEBUG: ${DJANGO_DEBUG}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS}
+      DJANGO_SUPERUSER_USERNAME: ${DJANGO_SUPERUSER_USERNAME}
+      DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL}
+      DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD}
     volumes:
       - .:/app
     ports:
@@ -26,9 +27,9 @@ services:
     image: postgres:16
     container_name: db
     environment:
-      POSTGRES_DB: hotel_room_booking
-      POSTGRES_USER: hotel
-      POSTGRES_PASSWORD: hotelpass
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U hotel -d hotel_room_booking"]
       interval: 3s

@@ -2,38 +2,19 @@ from __future__ import annotations
 
 from typing import Any
 
-from drf_spectacular.utils import OpenApiParameter, OpenApiTypes, extend_schema, extend_schema_view
 from django.db.models import QuerySet
+from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 
+from .filters import BookingFilter
 from .models import Booking
 from .models import BookingStatus
 from .serializers import BookingSerializer
 
-
-@extend_schema_view(
-    list=extend_schema(
-        parameters=[
-            OpenApiParameter(
-                name="user_id",
-                type=OpenApiTypes.INT,
-                location=OpenApiParameter.QUERY,
-                required=False,
-                description="(staff only) Filter bookings by user id.",
-            ),
-            OpenApiParameter(
-                name="username",
-                type=OpenApiTypes.STR,
-                location=OpenApiParameter.QUERY,
-                required=False,
-                description="(staff only) Filter bookings by username (exact match).",
-            ),
-        ]
-    )
-)
 class BookingViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -45,6 +26,8 @@ class BookingViewSet(
     queryset = Booking.objects.all()
     serializer_class = BookingSerializer
     permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = BookingFilter
 
     def get_permissions(self):
         if self.action in {"update", "partial_update", "destroy"}:
@@ -55,15 +38,6 @@ class BookingViewSet(
         qs = Booking.objects.select_related("room", "user")
         user = self.request.user
         if user.is_staff:
-            params = self.request.query_params
-            user_id = params.get("user_id")
-            username = params.get("username")
-
-            if user_id:
-                qs = qs.filter(user_id=user_id)
-            if username:
-                qs = qs.filter(user__username=username)
-
             return qs
 
         if user.id is None:
@@ -82,6 +56,14 @@ class BookingViewSet(
     @action(detail=True, methods=["post"])
     def cancel(self, request, pk: str | None = None, *args: Any, **kwargs: Any):
         booking = self.get_object()
+
+        # Only the booking owner or staff can cancel.
+        if not request.user.is_staff and booking.user_id != request.user.id:
+            return Response(
+                {"detail": "You can only cancel your own bookings."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         if booking.status != BookingStatus.CANCELED:
             booking.status = BookingStatus.CANCELED
             booking.save(update_fields=["status"])
