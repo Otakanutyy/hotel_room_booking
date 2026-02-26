@@ -21,7 +21,10 @@ class BookingSerializer(serializers.ModelSerializer):
         user = getattr(request, "user", None)
 
         # Only staff can change booking status via PUT/PATCH.
-        if not getattr(user, "is_staff", False):
+        is_admin = bool(
+            getattr(user, "is_staff", False) or getattr(user, "is_superuser", False)
+        )
+        if not is_admin:
             fields["status"].read_only = True
 
         return fields
@@ -57,7 +60,9 @@ class BookingSerializer(serializers.ModelSerializer):
 
         # Runs model-level validation (date order check).
         # Overlap check is deferred to create/update inside a transaction.
-        instance.full_clean()
+        # Use clean() instead of full_clean() to avoid false unique-id
+        # errors on updates when validating a temporary instance.
+        instance.clean()
         return attrs
 
     def create(self, validated_data: dict[str, Any]) -> Booking:

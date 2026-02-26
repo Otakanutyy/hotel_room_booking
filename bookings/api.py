@@ -10,6 +10,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 
+from config.permissions import IsStaffOrSuperuser
+
 from .filters import BookingFilter
 from .models import Booking
 from .models import BookingStatus
@@ -31,13 +33,13 @@ class BookingViewSet(
 
     def get_permissions(self):
         if self.action in {"update", "partial_update", "destroy"}:
-            return [permissions.IsAdminUser()]
+            return [IsStaffOrSuperuser()]
         return super().get_permissions()
 
     def get_queryset(self) -> QuerySet[Booking]:
         qs = Booking.objects.select_related("room", "user")
         user = self.request.user
-        if user.is_staff:
+        if user.is_staff or user.is_superuser:
             return qs
 
         if user.id is None:
@@ -56,14 +58,6 @@ class BookingViewSet(
     @action(detail=True, methods=["post"])
     def cancel(self, request, pk: str | None = None, *args: Any, **kwargs: Any):
         booking = self.get_object()
-
-        # Only the booking owner or staff can cancel.
-        if not request.user.is_staff and booking.user_id != request.user.id:
-            return Response(
-                {"detail": "You can only cancel your own bookings."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
         if booking.status != BookingStatus.CANCELED:
             booking.status = BookingStatus.CANCELED
             booking.save(update_fields=["status"])
