@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from django.contrib.auth import get_user_model
+from django.db import IntegrityError, transaction
 
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import status
@@ -31,11 +32,15 @@ class RegisterSerializer(serializers.Serializer):
 
     def create(self, validated_data: dict[str, Any]):
         User = get_user_model()
-        return User.objects.create_user(
-            username=validated_data["username"],
-            email=(validated_data.get("email") or "").strip(),
-            password=validated_data["password"],
-        )
+        try:
+            with transaction.atomic():
+                return User.objects.create_user(
+                    username=validated_data["username"],
+                    email=(validated_data.get("email") or "").strip(),
+                    password=validated_data["password"],
+                )
+        except IntegrityError:
+            raise serializers.ValidationError({"username": "username already exists"})
 
 
 class RegisterView(GenericAPIView):

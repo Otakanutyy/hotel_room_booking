@@ -21,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-uy$jj%v7@%ab-s-lf%_av8-1jx0pao+y%#-dd2j#)pi))u)bt0"
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-fallback-dev-only")
 
 
 def _env_bool(name: str, default: bool) -> bool:
@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "django_filters",
     "drf_spectacular",
     "bookings",
     "rooms",

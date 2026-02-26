@@ -3,6 +3,7 @@ Hotel room booking (Django + Postgres).
 ## Run (Docker)
 
 ```bash
+cp .env.example .env   # create .env from template (edit if needed)
 docker compose up -d --build
 ```
 
@@ -30,6 +31,7 @@ Auth (JWT):
 - POST http://localhost:8000/api/auth/jwt/ (get access/refresh)
 - POST http://localhost:8000/api/auth/jwt/refresh/ (refresh access)
 - Use header: Authorization: Bearer <access>
+
 
 Dev tools:
 ```bash

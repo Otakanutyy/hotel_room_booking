@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
+from django.db import transaction
 from rest_framework import serializers
 
 from .models import Booking
@@ -54,6 +55,24 @@ class BookingSerializer(serializers.ModelSerializer):
             status=status or Booking._meta.get_field("status").default,
         )
 
-        # Runs model-level validation (date order + overlap check)
+        # Runs model-level validation (date order check).
+        # Overlap check is deferred to create/update inside a transaction.
         instance.full_clean()
         return attrs
+
+    def create(self, validated_data: dict[str, Any]) -> Booking:
+        """Create booking inside a transaction with row-level locking."""
+        with transaction.atomic():
+            instance = Booking(**validated_data)
+            instance.check_overlap()
+            instance.save()
+        return instance
+
+    def update(self, instance: Booking, validated_data: dict[str, Any]) -> Booking:
+        """Update booking inside a transaction with row-level locking."""
+        with transaction.atomic():
+            for attr, value in validated_data.items():
+                setattr(instance, attr, value)
+            instance.check_overlap()
+            instance.save()
+        return instance

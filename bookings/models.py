@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 
 from rooms.models import Room
 
@@ -33,19 +33,24 @@ class Booking(models.Model):
         if self.start_date and self.end_date and self.start_date >= self.end_date:
             raise ValidationError("end_date must be after start_date")
 
-        # Only confirmed bookings should block availability.
+    def check_overlap(self) -> None:
         if self.status != BookingStatus.CONFIRMED:
             return
 
         if not self.room_id or not self.start_date or not self.end_date:
             return
 
-        overlaps = Booking.objects.filter(
-            room_id=self.room_id,
-            status=BookingStatus.CONFIRMED,
-            start_date__lt=self.end_date,
-            end_date__gt=self.start_date,
-        ).exclude(pk=self.pk)
+        overlaps = (
+            Booking.objects
+            .select_for_update()
+            .filter(
+                room_id=self.room_id,
+                status=BookingStatus.CONFIRMED,
+                start_date__lt=self.end_date,
+                end_date__gt=self.start_date,
+            )
+            .exclude(pk=self.pk)
+        )
 
         if overlaps.exists():
             raise ValidationError("Room is not available for this date range")
