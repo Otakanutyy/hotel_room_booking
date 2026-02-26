@@ -11,6 +11,8 @@ from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
 
+from config.permissions import IsStaffOrSuperuser
+
 from .filters import RoomFilter
 from .models import Room
 from .serializers import RoomSerializer
@@ -39,7 +41,7 @@ class RoomViewSet(viewsets.ModelViewSet):
         # only admin/staff can create/update/delete.
         if self.action in {"list", "retrieve", "available"}:
             return [permissions.AllowAny()]
-        return [permissions.IsAdminUser()]
+        return [IsStaffOrSuperuser()]
 
     @extend_schema(
         auth=[],
